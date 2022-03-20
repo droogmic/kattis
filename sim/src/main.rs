@@ -1,7 +1,4 @@
-use std::{
-    collections::VecDeque,
-    io::{self, Read},
-};
+use std::io::{self, Read};
 
 fn main() {
     let input = {
@@ -21,7 +18,7 @@ enum Char {
 }
 
 impl Char {
-    const fn from(c: char) -> Self {
+    fn from(c: char) -> Self {
         match c {
             '<' => Char::Back,
             ']' => Char::End,
@@ -47,61 +44,6 @@ pub fn sim(input: String) -> String {
         .join("\n")
 }
 
-fn process(line: String) -> String {
-    enum PushSide {
-        Front,
-        Back,
-    }
-    fn push(
-        parts: &mut VecDeque<Vec<CharOrBackspace>>,
-        part: Vec<CharOrBackspace>,
-        side: PushSide,
-    ) {
-        match side {
-            PushSide::Front => parts.push_front(part),
-            PushSide::Back => parts.push_back(part),
-        };
-    }
-    let parts = {
-        let (mut parts, last, side) = line.chars().map(Char::from).fold(
-            (VecDeque::new(), Vec::new(), PushSide::Front),
-            |(mut parts, mut part, side), c| match c {
-                Char::Back => {
-                    // Skip backspaces at the front
-                    if !part.is_empty() || matches!(side, PushSide::Back) {
-                        part.push(CharOrBackspace::Backspace);
-                    }
-
-                    (parts, part, side)
-                }
-                Char::Other(c) => {
-                    part.push(CharOrBackspace::Char(c));
-                    (parts, part, side)
-                }
-                Char::Home => {
-                    push(&mut parts, part, side);
-                    (parts, Vec::new(), PushSide::Front)
-                }
-                Char::End => {
-                    push(&mut parts, part, side);
-                    (parts, Vec::new(), PushSide::Back)
-                }
-            },
-        );
-        push(&mut parts, last, side);
-        dbg!(parts)
-    };
-    parts
-        .into_iter()
-        .flatten()
-        .rev()
-        .fold((Vec::<char>::new(), 0_usize), fold_part)
-        .0
-        .into_iter()
-        .rev()
-        .collect::<String>()
-}
-
 enum CharOrBackspace {
     Backspace,
     Char(char),
@@ -123,6 +65,75 @@ impl std::fmt::Debug for CharOrBackspace {
         write!(f, "{}", self)
     }
 }
+
+#[derive(PartialEq)]
+enum PushSide {
+    Front,
+    Back,
+}
+
+fn process(line: String) -> String {
+    let ((mut front_parts, mut back_parts), last, side) = line.chars().map(Char::from).fold(
+        (
+            (Vec::<char>::new(), Vec::<CharOrBackspace>::new()),
+            Vec::<CharOrBackspace>::new(),
+            PushSide::Front,
+        ),
+        |((mut front_parts, mut back_parts), mut part, side), c| match c {
+            Char::Back => {
+                // Skip backspaces at the front
+                if !part.is_empty() || side == PushSide::Back {
+                    part.push(CharOrBackspace::Backspace);
+                }
+                ((front_parts, back_parts), part, side)
+            }
+            Char::Other(c) => {
+                part.push(CharOrBackspace::Char(c));
+                ((front_parts, back_parts), part, side)
+            }
+            Char::Home => {
+                push_parts((&mut front_parts, &mut back_parts), part, side);
+                ((front_parts, back_parts), Vec::new(), PushSide::Front)
+            }
+            Char::End => {
+                push_parts((&mut front_parts, &mut back_parts), part, side);
+                ((front_parts, back_parts), Vec::new(), PushSide::Back)
+            }
+        },
+    );
+    push_parts((&mut front_parts, &mut back_parts), last, side);
+    front_parts
+        .into_iter()
+        .rev()
+        .chain(
+            back_parts
+                .into_iter()
+                .rev()
+                .fold((Vec::<char>::new(), 0_usize), fold_part)
+                .0
+                .into_iter()
+                .rev(),
+        )
+        .collect()
+}
+
+fn push_parts(
+    (front_parts, back_parts): (&mut Vec<char>, &mut Vec<CharOrBackspace>),
+    mut part: Vec<CharOrBackspace>,
+    side: PushSide,
+) {
+    match side {
+        PushSide::Front => front_parts.append(
+            &mut part
+                .into_iter()
+                .rev()
+                .fold((Vec::<char>::new(), 0_usize), fold_part)
+                .0,
+        ),
+        PushSide::Back => back_parts.append(&mut part),
+    };
+}
+
 fn fold_part((mut acc, backs): (Vec<char>, usize), c: CharOrBackspace) -> (Vec<char>, usize) {
     let backs = match c {
         CharOrBackspace::Backspace => backs + 1,
@@ -155,5 +166,13 @@ mod tests {
         let res = sim(input.to_owned());
         println!("{}", res);
         assert_eq!(res, "steven loves cs2040 and also cs2040c");
+    }
+
+    #[test]
+    fn test_example_3() {
+        let input = "3\nfoo\nbar\nabc<<<<[abc";
+        let res = sim(input.to_owned());
+        println!("{}", res);
+        assert_eq!(res, "foo\nbar\nabc");
     }
 }
