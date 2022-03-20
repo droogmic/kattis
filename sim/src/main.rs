@@ -104,16 +104,14 @@ fn process(line: String) -> String {
     push_parts((&mut front_parts, &mut back_parts), last, side);
     front_parts
         .into_iter()
+        .map(CharOrBackspace::Char)
         .rev()
-        .chain(
-            back_parts
-                .into_iter()
-                .rev()
-                .fold((Vec::<char>::new(), 0_usize), fold_part)
-                .0
-                .into_iter()
-                .rev(),
-        )
+        .chain(back_parts.into_iter())
+        .rev()
+        .fold((Vec::<char>::new(), 0_usize), fold_part)
+        .0
+        .into_iter()
+        .rev()
         .collect()
 }
 
@@ -174,5 +172,21 @@ mod tests {
         let res = sim(input.to_owned());
         println!("{}", res);
         assert_eq!(res, "foo\nbar\nabc");
+    }
+
+    #[test]
+    fn test_example_4() {
+        let input = "1\ndef[abc]ghi<<<<<<";
+        let res = sim(input.to_owned());
+        println!("{}", res);
+        assert_eq!(res, "abc");
+    }
+
+    #[test]
+    fn test_example_5() {
+        let input = "1\ndef[abc]ghi<<<<<<<<<<<<<[abc";
+        let res = sim(input.to_owned());
+        println!("{}", res);
+        assert_eq!(res, "abc");
     }
 }
