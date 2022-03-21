@@ -13,8 +13,8 @@ fn main() {
 pub fn hyper_pyramids(input: String) -> String {
     // Parsing
     let mut input = input.split(" ");
-    let d: usize = input.next().unwrap().parse().unwrap();
-    let h: usize = input.next().unwrap().parse().unwrap();
+    let _d: usize = input.next().unwrap().parse().unwrap();
+    let _h: usize = input.next().unwrap().parse().unwrap();
 
     return "foo".to_owned();
 }
