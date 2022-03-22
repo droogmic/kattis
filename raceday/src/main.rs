@@ -3,6 +3,8 @@ use std::{
     collections::HashMap,
     fmt::Display,
     io::{self, Read},
+    iter::FromIterator,
+    iter::IntoIterator,
     num::ParseIntError,
     str::FromStr,
 };
@@ -43,38 +45,52 @@ impl Display for Runners {
                 .unwrap()
                 .then_with(|| a.first_name.partial_cmp(&b.first_name).unwrap())
         });
-        let mut split_1_ranking: Vec<&Runner> = self.0.values().collect();
-        split_1_ranking.sort_unstable_by_key(|r| r.splits.split_1.as_ref().unwrap());
-        let mut split_2_ranking: Vec<&Runner> = self.0.values().collect();
-        split_2_ranking.sort_unstable_by_key(|r| r.splits.split_2.as_ref().unwrap());
-        let mut finish_ranking: Vec<&Runner> = self.0.values().collect();
-        finish_ranking.sort_unstable_by_key(|r| r.splits.finish.as_ref().unwrap());
-        for (bib, runner) in runners {
+        let get_rank_split_1 = |runner: &Runner| -> usize {
+            runners
+                .iter()
+                .filter(|(_, r)| r.splits.split_1 < runner.splits.split_1)
+                .count()
+                + 1
+        };
+        let get_rank_split_2 = |runner: &Runner| -> usize {
+            runners
+                .iter()
+                .filter(|(_, r)| r.splits.split_2 < runner.splits.split_2)
+                .count()
+                + 1
+        };
+        let get_rank_finish = |runner: &Runner| -> usize {
+            runners
+                .iter()
+                .filter(|(_, r)| r.splits.finish < runner.splits.finish)
+                .count()
+                + 1
+        };
+        for (bib, runner) in &runners {
             writeln!(
                 f,
                 table_fmt_str!(),
                 format!("{}, {}", runner.last_name, runner.first_name),
                 bib,
                 runner.splits.split_1.as_ref().unwrap().to_string(),
-                split_1_ranking.iter().position(|r| r == &runner).unwrap() + 1,
+                get_rank_split_1(runner),
                 runner.splits.split_2.as_ref().unwrap().to_string(),
-                split_2_ranking.iter().position(|r| r == &runner).unwrap() + 1,
+                get_rank_split_2(runner),
                 runner.splits.finish.as_ref().unwrap().to_string(),
-                finish_ranking.iter().position(|r| r == &runner).unwrap() + 1
+                get_rank_finish(runner),
             )?;
         }
         Ok(())
     }
 }
 
-#[derive(PartialEq)]
 struct Runner {
     first_name: String,
     last_name: String,
     splits: Splits,
 }
 
-#[derive(Default, PartialEq)]
+#[derive(Default)]
 struct Splits {
     split_1: Option<Time>,
     split_2: Option<Time>,
