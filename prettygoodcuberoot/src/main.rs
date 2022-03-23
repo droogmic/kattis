@@ -25,9 +25,9 @@ pub fn func(input: String) -> String {
         .fold((Vec::<Digit>::new(), 0), |(mut found, remainder), next| {
             let current_value = 1000 * remainder + next;
             let part_found = found.as_slice();
-            let calc_y = |p: &[u8], x: u32| -> u32 {
+            let calc_y = |_p: &[u8], x: u32| -> u32 {
                 (0..N)
-                    .map(|i| 10u32.pow(i) * pascal(N, i) * p.pow(i) * x.pow(N - i))
+                    .map(|i| 10u32.pow(i) * pascal(N, i) * /*p.pow(i) **/ x.pow(N - i))
                     .sum()
             };
             let mut x = 0;
@@ -56,18 +56,18 @@ pub fn func(input: String) -> String {
         .collect()
 }
 
-fn long_mult(a: &[u8], b: &[u8]) -> Vec<u8> {
-    let res = vec![0; a.len() + b.len()];
-    for (i, a_i) in a.iter().enumerate() {
-        for (j, b_j) in b.iter().enumerate() {
-            let current = res[i+j] + a_i * 1 * (j < b.len() ? b[j] : 0) + carry;
-            c[i+j] = int (cur % base);
-            carry = int (cur / base);
-        }
-    }
-    while (c.size() > 1 && c.back() == 0)
-        c.pop_back();
-}
+// fn long_mult(a: &[u8], b: &[u8]) -> Vec<u8> {
+//     let res = vec![0; a.len() + b.len()];
+//     for (i, a_i) in a.iter().enumerate() {
+//         for (j, b_j) in b.iter().enumerate() {
+//             let current = res[i+j] + a_i * 1 * (j < b.len() ? b[j] : 0) + carry;
+//             c[i+j] = int (cur % base);
+//             carry = int (cur / base);
+//         }
+//     }
+//     while (c.size() > 1 && c.back() == 0)
+//         c.pop_back();
+// }
 
 fn round_up(digits: &mut Vec<u8>) {
     let last = digits.pop().unwrap();
