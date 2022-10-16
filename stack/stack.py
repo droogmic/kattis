@@ -1,6 +1,6 @@
 import logging
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 
 logging.basicConfig(level=os.environ.get("LOG_LEVEL", "WARNING"))
@@ -151,9 +151,14 @@ def stack_astar(string):
         characters_printed: int = 0
         stack: Stack = Stack()
         cheapest_operation_count: int = 0
+        best_case_operation_count: int = field(init=False)
 
-        @property
-        def best_case_operation_count(self):
+        def __post_init__(self):
+            object.__setattr__(
+                self, "best_case_operation_count", self.get_best_case_operation_count()
+            )
+
+        def get_best_case_operation_count(self):
             """
             Current cheapest
             pop the rest of the stack
@@ -207,31 +212,35 @@ def stack_astar(string):
                 else:
                     raise NotImplementedError()
 
-            neighbours = []
-            if self.stack and self.stack[-1] == next_char:  # print
-                neighbours.append(
+            if self.stack and self.stack[-1] == next_char:
+                # print
+                return [
                     Node(
                         characters_printed=self.characters_printed + 1,
                         stack=self.stack,
                         cheapest_operation_count=self.cheapest_operation_count + 1,
                     )
+                ]
+
+            # push
+            neighbours = [
+                Node(
+                    characters_printed=self.characters_printed,
+                    stack=Stack([*self.stack, next_char]),
+                    cheapest_operation_count=self.cheapest_operation_count + 1,
                 )
-            else:  # push
+            ]
+            if (
+                next_char in self.stack
+            ):  # we can pop whenever, do this as late as possible
+                # pop
                 neighbours.append(
                     Node(
                         characters_printed=self.characters_printed,
-                        stack=Stack([*self.stack, next_char]),
+                        stack=Stack(self.stack[:-1]),
                         cheapest_operation_count=self.cheapest_operation_count + 1,
                     )
                 )
-                if self.stack:  # pop
-                    neighbours.append(
-                        Node(
-                            characters_printed=self.characters_printed,
-                            stack=Stack(self.stack[:-1]),
-                            cheapest_operation_count=self.cheapest_operation_count + 1,
-                        )
-                    )
             return neighbours
 
     discovered_nodes_heap = []
@@ -270,8 +279,12 @@ def test():
     print(stack_astar("abba"))
     print(stack_astar("rollover ahead"))
     print(stack_astar("abba rollover ahead ogopogo spotted!"))
+    print(
+        stack_astar(
+            "abba rollover ahead ogopogo spotted! abba rollover ahead ogopogo spotted!"
+        )
+    )
 
 
 if __name__ == "__main__":
-    # test()
-    main()
+    test()
