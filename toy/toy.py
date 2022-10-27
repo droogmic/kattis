@@ -116,6 +116,10 @@ def recursive_furthest_right(remaining_segments, next_points):
         )
     except NotRealTriangle:
         return 0
+
+    if new_point.x <= 0.0001:
+        return 0
+
     furthest_right = (
         recursive_furthest_right(
             remaining_segments=remaining_segments.copy(),
